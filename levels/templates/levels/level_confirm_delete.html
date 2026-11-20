@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delete Level | Rollpath</title>
+</head>
+<body>
+    <h1>Delete Level</h1>
+
+    <p>Are you sure you want to delete "{{ level.title }}"?</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit">Yes, Delete</button>
+    </form>
+
+    <a href="{% url 'level_detail' level.pk %}">Cancel</a>
+</body>
+</html>

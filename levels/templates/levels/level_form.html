@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ page_title }} | Rollpath</title>
+</head>
+<body>
+    <h1>{{ page_title }}</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <button type="submit">Save Level</button>
+    </form>
+
+    <a href="{% url 'level_list' %}">Cancel</a>
+</body>
+</html>
