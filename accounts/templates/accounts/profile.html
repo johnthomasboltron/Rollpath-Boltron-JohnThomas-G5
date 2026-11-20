@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile | Rollpath</title>
+</head>
+<body>
+
+    <h1>My Rollpath Profile</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>Username: {{ user.username }}</p>
+    <p>Email: {{ user.email }}</p>
+    <p>Role: {{ user.get_role_display }}</p>
+
+    <h2>Edit Profile</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit">Save Changes</button>
+    </form>
+
+    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+
+</body>
+</html>

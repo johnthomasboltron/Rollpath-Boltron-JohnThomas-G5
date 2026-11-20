@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tester Dashboard | Rollpath</title>
+</head>
+<body>
+    <h1>Tester Dashboard</h1>
+    <h1>Welcome, {{ user.profile.display_name }}!</h1>
+    <p>Explore levels, playtest, rate, and share feedback.</p>
+    <a href="{% url 'profile' %}">My Profile</a>
+
+    <form method="POST" action="{% url 'logout' %}">
+        {% csrf_token %}
+        <button type="submit">Logout</button>
+    </form>
+</body>
+</html>

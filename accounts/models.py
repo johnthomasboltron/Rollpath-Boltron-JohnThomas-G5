@@ -19,3 +19,16 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.username
+
+class Profile(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile"
+    )
+
+    display_name = models.CharField(max_length=100, unique=True)
+    bio = models.TextField(max_length=300, blank=True)
+
+    def __str__(self):
+        return self.display_name
