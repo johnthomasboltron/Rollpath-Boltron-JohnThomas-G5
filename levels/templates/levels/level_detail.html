@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ level.title }} | Rollpath</title>
+</head>
+<body>
+    <h1>{{ level.title }}</h1>
+
+    <p>{{ level.description|default:"No description." }}</p>
+
+    <p>Board: {{ level.grid_width }} × {{ level.grid_height }}</p>
+    <p>Status: {{ level.get_status_display }}</p>
+    <p>Created: {{ level.created_at }}</p>
+
+    {% if level.status == "DRAFT" %}
+        <form method="POST" action="{% url 'level_publish' level.pk %}">
+            {% csrf_token %}
+            <button type="submit">Publish Level</button>
+        </form>
+    {% endif %}
+
+    <a href="{% url 'level_update' level.pk %}">Edit</a>
+    <a href="{% url 'level_delete' level.pk %}">Delete</a>
+    <a href="{% url 'level_list' %}">Back to My Levels</a>
+</body>
+</html>

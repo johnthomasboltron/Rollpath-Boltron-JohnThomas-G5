@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Levels | Rollpath</title>
+</head>
+<body>
+    <h1>My Levels</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <a href="{% url 'level_create' %}">Create New Level</a>
+
+    <hr>
+
+    {% for level in levels %}
+        <div>
+            <h2>
+                <a href="{% url 'level_detail' level.pk %}">
+                    {{ level.title }}
+                </a>
+            </h2>
+
+            <p>{{ level.description|default:"No description." }}</p>
+            <p>Board: {{ level.grid_width }} × {{ level.grid_height }}</p>
+            <p>Status: {{ level.get_status_display }}</p>
+            <p>Created: {{ level.created_at }}</p>
+        </div>
+        <hr>
+    {% empty %}
+        <p>You haven't created any levels yet.</p>
+    {% endfor %}
+
+    <a href="{% url 'dashboard' %}">Back to Dashboard</a>
+</body>
+</html>

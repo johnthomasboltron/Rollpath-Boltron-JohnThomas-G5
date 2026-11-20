@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,8 +8,12 @@
 <body>
     <h1>Creator Dashboard</h1>
     <h1>Welcome, {{ user.profile.display_name }}!</h1>
+
     <p>Design, simulate, and publish your physics-puzzle levels.</p>
+
     <a href="{% url 'profile' %}">My Profile</a>
+    <br>
+    <a href="{% url 'level_list' %}">My Levels</a>
 
     <form method="POST" action="{% url 'logout' %}">
         {% csrf_token %}
