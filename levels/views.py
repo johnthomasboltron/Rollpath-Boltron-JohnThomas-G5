@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
 from .models import Level
-from .forms import LevelForm
+from .forms import LevelForm, LevelElementForm
 
 
 def creator_required(user):
@@ -123,3 +123,60 @@ def level_publish(request, pk):
         messages.success(request, "Level published successfully!")
 
     return redirect("level_detail", pk=level.pk)
+
+
+@login_required
+def level_editor(request, pk):
+    level = get_object_or_404(Level, pk=pk)
+
+    if level.creator != request.user and not request.user.is_superuser:
+        raise PermissionDenied
+
+    if not creator_required(request.user):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = LevelElementForm(request.POST, level=level)
+
+        if form.is_valid():
+            element = form.save(commit=False)
+            element.level = level
+            element.save()
+
+            messages.success(request, "Element added successfully!")
+            return redirect("level_editor", pk=level.pk)
+
+    else:
+        form = LevelElementForm(level=level)
+
+    elements = list(
+        level.elements.select_related(
+            "element_type"
+        ).order_by("pos_y", "pos_x")
+    )
+
+    board_rows = []
+
+    for y in range(level.grid_height):
+        row = []
+
+        for x in range(level.grid_width):
+            placed_element = next(
+                (
+                    element for element in elements
+                    if element.pos_x <= x < element.pos_x + element.width
+                    and element.pos_y <= y < element.pos_y + element.height
+                ),
+                None
+            )
+
+            row.append(placed_element)
+
+        board_rows.append(row)
+
+    return render(request, "levels/level_editor.html", {
+        "level": level,
+        "form": form,
+        "elements": elements,
+        "board_rows": board_rows,
+    })
