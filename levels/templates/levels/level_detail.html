@@ -19,6 +19,9 @@
         </form>
     {% endif %}
 
+    <a href="{% url 'level_editor' level.pk %}">Open Level Editor</a>
+    <br>
+
     <a href="{% url 'level_update' level.pk %}">Edit</a>
     <a href="{% url 'level_delete' level.pk %}">Delete</a>
     <a href="{% url 'level_list' %}">Back to My Levels</a>

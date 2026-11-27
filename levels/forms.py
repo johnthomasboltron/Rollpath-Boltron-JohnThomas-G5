@@ -104,18 +104,118 @@ class LevelElementForm(forms.ModelForm):
                 "Element exceeds the board's height."
             )
 
-        if element_type:
-            duplicate = LevelElement.objects.filter(
-                level=self.level,
-                element_type=element_type,
-                pos_x=pos_x,
-                pos_y=pos_y,
-            ).exclude(pk=self.instance.pk).exists()
-
-            if duplicate:
+        for existing in LevelElement.objects.filter(
+            level=self.level
+        ).exclude(pk=self.instance.pk):
+            if (
+                pos_x < existing.pos_x + existing.width
+                and pos_x + width > existing.pos_x
+                and pos_y < existing.pos_y + existing.height
+                and pos_y + height > existing.pos_y
+            ):
                 self.add_error(
                     "element_type",
-                    "This element type already occupies that position."
+                    "Elements cannot overlap with existing elements."
                 )
+                break
+        return cleaned_data
+
+class LevelElementMoveForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.level = kwargs.pop("level", None)
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = LevelElement
+        fields = ["pos_x", "pos_y"]
+
+        widgets = {
+            "pos_x": forms.NumberInput(attrs={"min": 0}),
+            "pos_y": forms.NumberInput(attrs={"min": 0}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        pos_x = cleaned_data.get("pos_x")
+        pos_y = cleaned_data.get("pos_y")
+
+        if not self.level:
+            raise forms.ValidationError("A level must be selected.")
+
+        if None in (pos_x, pos_y):
+            return cleaned_data
+
+        if pos_x + self.instance.width > self.level.grid_width:
+            self.add_error("pos_x", "Element exceeds the board's width.")
+
+        if pos_y + self.instance.height > self.level.grid_height:
+            self.add_error("pos_y", "Element exceeds the board's height.")
+
+        for existing in LevelElement.objects.filter(
+            level=self.level
+        ).exclude(pk=self.instance.pk):
+            if (
+                pos_x < existing.pos_x + existing.width
+                and pos_x + self.instance.width > existing.pos_x
+                and pos_y < existing.pos_y + existing.height
+                and pos_y + self.instance.height > existing.pos_y
+            ):
+                self.add_error(
+                    "pos_x",
+                    "Elements cannot overlap with existing elements."
+                )
+                break
+
+        return cleaned_data
+
+class LevelElementResizeForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.level = kwargs.pop("level", None)
+        super().__init__(*args, **kwargs)
+
+    class Meta:
+        model = LevelElement
+        fields = ["width", "height"]
+
+        widgets = {
+            "width": forms.NumberInput(attrs={"min": 1}),
+            "height": forms.NumberInput(attrs={"min": 1}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        width = cleaned_data.get("width")
+        height = cleaned_data.get("height")
+
+        if not self.level:
+            raise forms.ValidationError("A level must be selected.")
+
+        if None in (width, height):
+            return cleaned_data
+
+        if self.instance.pos_x + width > self.level.grid_width:
+            self.add_error("width", "Element exceeds the board's width.")
+
+        if self.instance.pos_y + height > self.level.grid_height:
+            self.add_error("height", "Element exceeds the board's height.")
+
+        for existing in LevelElement.objects.filter(
+            level=self.level
+        ).exclude(pk=self.instance.pk):
+            if (
+                self.instance.pos_x < existing.pos_x + existing.width
+                and self.instance.pos_x + width > existing.pos_x
+                and self.instance.pos_y < existing.pos_y + existing.height
+                and self.instance.pos_y + height > existing.pos_y
+            ):
+                self.add_error(
+                    "width",
+                    "Resized element would overlap another element."
+                )
+                break
 
         return cleaned_data

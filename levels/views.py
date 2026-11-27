@@ -4,8 +4,13 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 
-from .models import Level
-from .forms import LevelForm, LevelElementForm
+from .models import Level, LevelElement
+from .forms import (
+    LevelForm,
+    LevelElementForm,
+    LevelElementMoveForm,
+    LevelElementResizeForm,
+)
 
 
 def creator_required(user):
@@ -116,6 +121,14 @@ def level_publish(request, pk):
         raise PermissionDenied
 
     if request.method == "POST":
+
+        if not level.elements.exists():
+            messages.error(
+                request,
+                "You must add at least one element before publishing."
+            )
+            return redirect("level_detail", pk=level.pk)
+
         level.status = Level.Status.PUBLISHED
         level.published_at = timezone.now()
         level.save(update_fields=["status", "published_at"])
@@ -180,3 +193,99 @@ def level_editor(request, pk):
         "elements": elements,
         "board_rows": board_rows,
     })
+
+@login_required
+def level_element_delete(request, pk, element_pk):
+    if request.method != "POST":
+        raise PermissionDenied
+
+    level = get_object_or_404(Level, pk=pk)
+
+    if level.creator != request.user and not request.user.is_superuser:
+        raise PermissionDenied
+
+    if not creator_required(request.user):
+        raise PermissionDenied
+
+    element = get_object_or_404(
+        LevelElement,
+        pk=element_pk,
+        level=level
+    )
+
+    element.delete()
+
+    messages.success(request, "Element removed successfully!")
+    return redirect("level_editor", pk=level.pk)
+
+@login_required
+def level_element_move(request, pk, element_pk):
+    if request.method != "POST":
+        raise PermissionDenied
+
+    level = get_object_or_404(Level, pk=pk)
+
+    if level.creator != request.user and not request.user.is_superuser:
+        raise PermissionDenied
+
+    if not creator_required(request.user):
+        raise PermissionDenied
+
+    element = get_object_or_404(
+        LevelElement,
+        pk=element_pk,
+        level=level
+    )
+
+    form = LevelElementMoveForm(
+        request.POST,
+        instance=element,
+        level=level
+    )
+
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Element moved successfully!")
+    else:
+        messages.error(request, "Could not move element. Check its coordinates.")
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
+
+    return redirect("level_editor", pk=level.pk)
+
+@login_required
+def level_element_resize(request, pk, element_pk):
+    if request.method != "POST":
+        raise PermissionDenied
+
+    level = get_object_or_404(Level, pk=pk)
+
+    if level.creator != request.user and not request.user.is_superuser:
+        raise PermissionDenied
+
+    if not creator_required(request.user):
+        raise PermissionDenied
+
+    element = get_object_or_404(
+        LevelElement,
+        pk=element_pk,
+        level=level
+    )
+
+    form = LevelElementResizeForm(
+        request.POST,
+        instance=element,
+        level=level
+    )
+
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Element resized successfully!")
+    else:
+        messages.error(request, "Could not resize element.")
+        for field, errors in form.errors.items():
+            for error in errors:
+                messages.error(request, error)
+
+    return redirect("level_editor", pk=level.pk)
