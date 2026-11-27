@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Level Editor | Rollpath</title>
+</head>
+<body>
+<style>
+    .editor-container {
+        max-width: 1400px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .editor-layout {
+        display: grid;
+        grid-template-columns: 200px minmax(300px, 1fr) 230px;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .editor-panel {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 16px;
+    }
+
+    .board-wrapper {
+        overflow: auto;
+        background: #e9edf2;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .game-board {
+        display: grid;
+        grid-template-columns: repeat(var(--grid-width), 32px);
+        grid-template-rows: repeat(var(--grid-height), 32px);
+        width: max-content;
+        margin: auto;
+        background: white;
+        border: 2px solid #333;
+    }
+
+    .grid-cell {
+        width: 32px;
+        height: 32px;
+        border: 1px solid #d5d9df;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    .element-wall {
+        background: #64748b;
+    }
+
+    .element-hazard {
+        background: #ef4444;
+    }
+
+    .element-checkpoint {
+        background: #22c55e;
+    }
+
+    .element-zone {
+        background: #3b82f6;
+    }
+
+    .element-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .element-form input,
+    .element-form select,
+    .element-form button {
+        padding: 9px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .element-list {
+        padding-left: 18px;
+    }
+
+    .element-list li {
+        margin-bottom: 8px;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+        .editor-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .board-cell {
+        cursor: crosshair;
+    }
+
+    .board-cell.selected {
+        outline: 3px solid #f59e0b;
+        outline-offset: -3px;
+    }
+</style>
+
+<div class="editor-container">
+
+    <div class="editor-header">
+        <div>
+            <h1>Level Editor</h1>
+            <h3>{{ level.title }}</h3>
+            <p>
+                Board: {{ level.grid_width }} × {{ level.grid_height }}
+            </p>
+        </div>
+
+        <a href="{% url 'level_detail' level.pk %}">
+            Back to Level Details
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <div class="editor-layout">
+
+        <aside class="editor-panel">
+            <h3>Element Palette</h3>
+
+            <p>Wall — Blocks movement</p>
+            <p>Hazard — Dangerous obstacle</p>
+            <p>Checkpoint — Safe point</p>
+            <p>Zone — Special area</p>
+
+            <hr>
+
+            <h3>Add Element</h3>
+
+            <form method="POST" class="element-form">
+                {% csrf_token %}
+
+                {{ form.as_p }}
+
+                <button type="submit">Add Element</button>
+            </form>
+        </aside>
+
+        <main class="board-wrapper">
+            <h3>Game Board</h3>
+
+            <div class="game-board"
+                 style="--grid-width: {{ level.grid_width }}; --grid-height: {{ level.grid_height }};">
+
+                {% for row in board_rows %}   
+                    {% for element in row %}
+                        {% if element %}
+                            <div class="grid-cell board-cell element-{{ element.element_type.name|lower }}"
+                                data-x="{{ forloop.counter0 }}"
+                                data-y="{{ forloop.parentloop.counter0 }}"
+                                title="{{ element.element_type }}">
+                              {% if element.element_type.name == "WALL" %}
+                                  ■
+                              {% elif element.element_type.name == "HAZARD" %}
+                                  !
+                             {% elif element.element_type.name == "CHECKPOINT" %}
+                                 ✓
+                             {% elif element.element_type.name == "ZONE" %}
+                                 Z
+                             {% endif %}
+                           </div>
+                     {% else %}
+                        <div class="grid-cell board-cell"
+                            data-x="{{ forloop.counter0 }}"
+                            data-y="{{ forloop.parentloop.counter0 }}">
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+
+
+            </div>
+        </main>
+
+        <aside class="editor-panel">
+            <h3>Placed Elements</h3>
+
+            {% if elements %}
+                <ul class="element-list">
+                    {% for element in elements %}
+                        <li>
+                            <strong>{{ element.element_type }}</strong>
+                            <br>
+                            Position: {{ element.pos_x }}, {{ element.pos_y }}
+                            <br>
+                            Size: {{ element.width }} × {{ element.height }}
+
+                            <form method="POST"
+                                action="{% url 'level_element_move' level.pk element.pk %}">
+                                {% csrf_token %}
+
+                                <label>New X:</label>
+                                <input type="number" name="pos_x"
+                                    min="0" value="{{ element.pos_x }}" required>
+
+                                <label>New Y:</label>
+                                <input type="number" name="pos_y"
+                                    min="0" value="{{ element.pos_y }}" required>
+
+                                <button type="submit">Move</button>
+                            </form>
+
+                            <form method="POST"
+                                action="{% url 'level_element_delete' level.pk element.pk %}"
+                                onsubmit="return confirm('Remove this element?');">
+                                {% csrf_token %}
+                                <button type="submit">Remove</button>
+                            </form>
+                            <form method="POST"
+                                action="{% url 'level_element_resize' level.pk element.pk %}">
+                                {% csrf_token %}
+
+                                <label>New Width:</label>
+                                <input type="number" name="width"
+                                    min="1" value="{{ element.width }}" required>
+
+                                <label>New Height:</label>
+                                <input type="number" name="height"
+                                    min="1" value="{{ element.height }}" required>
+
+                                <button type="submit">Resize</button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No elements placed yet.</p>
+            {% endif %}
+        </aside>
+
+    </div>
+
+    <a class="back-link" href="{% url 'level_detail' level.pk %}">
+        ← Back to Level Details
+    </a>
+
+</div>
+
+<script>
+    const boardCells = document.querySelectorAll(".board-cell");
+    const xInput = document.getElementById("id_pos_x");
+    const yInput = document.getElementById("id_pos_y");
+
+    boardCells.forEach(cell => {
+        cell.addEventListener("click", () => {
+            xInput.value = cell.dataset.x;
+            yInput.value = cell.dataset.y;
+
+            boardCells.forEach(item => item.classList.remove("selected"));
+            cell.classList.add("selected");
+        });
+    });
+</script>
+
+</body>
+</html>
