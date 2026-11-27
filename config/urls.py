@@ -1,3 +1,7 @@
+from django.contrib import admin
+from django.urls import path, include
+from django.views.generic import RedirectView
+
 """
 URL configuration for config project.
 
@@ -28,3 +32,6 @@ urlpatterns = [
     )),
     path("levels/", include("levels.urls")),
 ]
+
+handler404 = "config.views.custom_404"
+handler500 = "config.views.custom_500"

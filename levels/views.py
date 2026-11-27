@@ -9,7 +9,7 @@ from .forms import LevelForm
 
 
 def creator_required(user):
-    return user.role == "CREATOR" or user.is_superuser
+    return getattr(user, "role", None) == "CREATOR" or user.is_superuser
 
 
 @login_required

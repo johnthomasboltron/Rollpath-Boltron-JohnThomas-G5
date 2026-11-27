@@ -6,6 +6,12 @@
 <body>
     <h1>{{ level.title }}</h1>
 
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
     <p>{{ level.description|default:"No description." }}</p>
 
     <p>Board: {{ level.grid_width }} × {{ level.grid_height }}</p>
